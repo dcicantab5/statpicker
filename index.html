@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="author" content="Statistical Decision Tools">
+    <title>Statistical Test Selection Algorithm</title>
+    <meta name="description" content="Evidence-based tool for selecting appropriate statistical tests based on research design">
+    <meta name="keywords" content="statistical tests, research design, data analysis, statistics, hypothesis testing">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Statistical Test Selection Algorithm">
+    <meta property="og:description" content="Evidence-based tool for selecting appropriate statistical tests">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="Statistical Test Selection Algorithm">
+    <meta property="twitter:description" content="Evidence-based tool for selecting appropriate statistical tests">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='50' x='50' text-anchor='middle' font-size='50'>📊</text></svg>">
+    
+    <!-- React and Babel -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f9fafb;
+            color: #111827;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        #root {
+            min-height: 100vh;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+    
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState } = React;
+
+        // SVG Icon Components
+        const BarChartIcon = () => (
+            <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+        );
+
+        const CalculatorIcon = () => (
+            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+        );
+
+        const BookOpenIcon = () => (
+            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.168 18.477 18.582 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+        );
+
+        const ClipboardCheckIcon = () => (
+            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+        );
+
+        const AlertCircleIcon = () => (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        );
+
+        const BarChartLargeIcon = () => (
+            <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+        );
+
+        const StatisticalTestAlgorithm = () => {
+            const [numDependentVars, setNumDependentVars] = useState('');
+            const [numIndependentVars, setNumIndependentVars] = useState('');
+            const [independentVarType, setIndependentVarType] = useState('');
+            const [dependentVarType, setDependentVarType] = useState('');
+            const [numGroups, setNumGroups] = useState('');
+            const [isMatched, setIsMatched] = useState(false);
+            const [showResults, setShowResults] = useState(false);
+
+            const [results, setResults] = useState({
+                recommendedTest: '',
+                testCategory: '',
+                assumptions: [],
+                interpretation: '',
+                alternatives: [],
+                additionalNotes: ''
+            });
+
+            const getStatisticalTest = () => {
+                const depVars = parseInt(numDependentVars);
+                const indepVars = parseInt(numIndependentVars);
+                const groups = parseInt(numGroups);
+                
+                let recommendedTest = '';
+                let testCategory = '';
+                let assumptions = [];
+                let interpretation = '';
+                let alternatives = [];
+                let additionalNotes = '';
+
+                // Single dependent variable scenarios
+                if (depVars === 1) {
+                    if (indepVars === 0) {
+                        // One sample tests
+                        if (dependentVarType === 'interval_normal') {
+                            recommendedTest = 'One-sample t-test';
+                            testCategory = 'parametric';
+                            assumptions = ['Normal distribution', 'Interval/ratio data', 'Independence of observations'];
+                            interpretation = 'Tests if sample mean differs significantly from population mean';
+                            alternatives = ['One-sample median test (if non-normal)'];
+                        } else if (dependentVarType === 'ordinal_interval') {
+                            recommendedTest = 'One-sample median test';
+                            testCategory = 'non-parametric';
+                            assumptions = ['Ordinal or interval data', 'Independence of observations'];
+                            interpretation = 'Tests if sample median differs significantly from hypothesized value';
+                        } else if (dependentVarType === 'categorical_2') {
+                            recommendedTest = 'Binomial test';
+                            testCategory = 'exact';
+                            assumptions = ['Dichotomous outcome', 'Independence of observations', 'Fixed number of trials'];
+                            interpretation = 'Tests if proportion differs significantly from expected proportion';
+                        } else if (dependentVarType === 'categorical_multi') {
+                            recommendedTest = 'Chi-square goodness-of-fit test';
+                            testCategory = 'categorical';
+                            assumptions = ['Expected frequencies ≥ 5', 'Independence of observations'];
+                            interpretation = 'Tests if observed frequencies differ from expected frequencies';
+                        }
+                    } else if (indepVars === 1) {
+                        if (groups === 2) {
+                            // Two group comparisons
+                            if (dependentVarType === 'interval_normal') {
+                                if (isMatched) {
+                                    recommendedTest = 'Paired t-test';
+                                    testCategory = 'parametric';
+                                    assumptions = ['Normal distribution of differences', 'Interval/ratio data', 'Paired observations'];
+                                    interpretation = 'Tests if mean difference between paired observations differs from zero';
+                                } else {
+                                    recommendedTest = '2 independent sample t-test';
+                                    testCategory = 'parametric';
+                                    assumptions = ['Normal distribution in both groups', 'Equal variances', 'Independence of observations'];
+                                    interpretation = 'Tests if means of two independent groups differ significantly';
+                                    alternatives = ['Welch t-test (unequal variances)'];
+                                }
+                            } else if (dependentVarType === 'ordinal_interval') {
+                                if (isMatched) {
+                                    recommendedTest = 'Wilcoxon signed ranks test';
+                                    testCategory = 'non-parametric';
+                                    assumptions = ['Paired observations', 'Ordinal or interval data'];
+                                    interpretation = 'Tests if median difference between paired observations differs from zero';
+                                } else {
+                                    recommendedTest = 'Wilcoxon-Mann Whitney test';
+                                    testCategory = 'non-parametric';
+                                    assumptions = ['Independent observations', 'Ordinal or interval data'];
+                                    interpretation = 'Tests if distributions of two groups differ significantly';
+                                }
+                            } else if (dependentVarType === 'categorical_2' || dependentVarType === 'categorical_multi') {
+                                if (isMatched) {
+                                    recommendedTest = 'McNemar test';
+                                    testCategory = 'categorical';
+                                    assumptions = ['Paired observations', 'Dichotomous outcome'];
+                                    interpretation = 'Tests if proportions change between paired observations';
+                                } else {
+                                    recommendedTest = 'Chi-square test / Fisher\'s exact test';
+                                    testCategory = 'categorical';
+                                    assumptions = ['Expected frequencies ≥ 5 (Chi-square)', 'Independence of observations'];
+                                    interpretation = 'Tests association between categorical variables';
+                                    alternatives = ['Fisher\'s exact test (small samples)'];
+                                }
+                            }
+                        } else if (groups > 2) {
+                            // Multiple group comparisons
+                            if (dependentVarType === 'interval_normal') {
+                                if (isMatched) {
+                                    recommendedTest = 'One-way repeated measures ANOVA';
+                                    testCategory = 'parametric';
+                                    assumptions = ['Normal distribution', 'Sphericity', 'No extreme outliers'];
+                                    interpretation = 'Tests if means differ across multiple time points or conditions';
+                                    alternatives = ['Friedman test (non-parametric)'];
+                                } else {
+                                    recommendedTest = 'One-way ANOVA';
+                                    testCategory = 'parametric';
+                                    assumptions = ['Normal distribution in all groups', 'Equal variances', 'Independence'];
+                                    interpretation = 'Tests if means of multiple independent groups differ significantly';
+                                    alternatives = ['Kruskal-Wallis test (non-parametric)'];
+                                }
+                            } else if (dependentVarType === 'ordinal_interval') {
+                                if (isMatched) {
+                                    recommendedTest = 'Friedman test';
+                                    testCategory = 'non-parametric';
+                                    assumptions = ['Repeated measures', 'Ordinal or interval data'];
+                                    interpretation = 'Tests if distributions differ across multiple time points';
+                                } else {
+                                    recommendedTest = 'Kruskal Wallis test';
+                                    testCategory = 'non-parametric';
+                                    assumptions = ['Independent observations', 'Ordinal or interval data'];
+                                    interpretation = 'Tests if distributions of multiple groups differ significantly';
+                                }
+                            } else if (dependentVarType === 'categorical_2' || dependentVarType === 'categorical_multi') {
+                                if (isMatched) {
+                                    recommendedTest = 'Repeated measures logistic regression';
+                                    testCategory = 'regression';
+                                    assumptions = ['Repeated measures', 'Linear relationship with log-odds'];
+                                    interpretation = 'Models probability of outcome across multiple time points';
+                                } else {
+                                    recommendedTest = 'Chi-square test';
+                                    testCategory = 'categorical';
+                                    assumptions = ['Expected frequencies ≥ 5', 'Independence of observations'];
+                                    interpretation = 'Tests association between categorical variables';
+                                }
+                            }
+                        }
+                    } else if (indepVars >= 2) {
+                        // Multiple independent variables
+                        if (dependentVarType === 'interval_normal') {
+                            if (independentVarType === 'categorical') {
+                                recommendedTest = 'Factorial ANOVA';
+                                testCategory = 'parametric';
+                                assumptions = ['Normal distribution', 'Equal variances', 'Independence'];
+                                interpretation = 'Tests main effects and interactions of multiple categorical predictors';
+                            } else if (independentVarType === 'mixed') {
+                                recommendedTest = 'Multiple regression / ANCOVA';
+                                testCategory = 'regression';
+                                assumptions = ['Linear relationship', 'Normal residuals', 'Homoscedasticity', 'Independence'];
+                                interpretation = 'Models continuous outcome using multiple predictors';
+                            }
+                        } else if (dependentVarType === 'ordinal_interval') {
+                            recommendedTest = 'Ordered logistic regression';
+                            testCategory = 'regression';
+                            assumptions = ['Proportional odds', 'Linear relationship with log-odds'];
+                            interpretation = 'Models ordinal outcome using multiple predictors';
+                        } else if (dependentVarType === 'categorical_2') {
+                            recommendedTest = 'Factorial logistic regression';
+                            testCategory = 'regression';
+                            assumptions = ['Linear relationship with log-odds', 'Independence of observations'];
+                            interpretation = 'Models binary outcome using multiple predictors';
+                        } else if (dependentVarType === 'categorical_multi') {
+                            recommendedTest = 'Multiple logistic regression';
+                            testCategory = 'regression';
+                            assumptions = ['Independence of irrelevant alternatives', 'Linear relationship with log-odds'];
+                            interpretation = 'Models multinomial outcome using multiple predictors';
+                        }
+                    }
+                }
+
+                // Multiple dependent variables
+                else if (depVars >= 2) {
+                    if (indepVars === 0) {
+                        recommendedTest = 'Factor analysis / Principal component analysis';
+                        testCategory = 'multivariate';
+                        assumptions = ['Adequate sample size', 'Linear relationships', 'No extreme multicollinearity'];
+                        interpretation = 'Explores underlying structure in multiple variables';
+                    } else if (indepVars === 1) {
+                        if (dependentVarType === 'interval_normal') {
+                            recommendedTest = 'One-way MANOVA';
+                            testCategory = 'multivariate';
+                            assumptions = ['Multivariate normality', 'Equal covariance matrices', 'Independence'];
+                            interpretation = 'Tests if groups differ on combination of dependent variables';
+                        }
+                    } else if (indepVars >= 2) {
+                        if (dependentVarType === 'interval_normal') {
+                            recommendedTest = 'Multivariate multiple linear regression';
+                            testCategory = 'multivariate';
+                            assumptions = ['Multivariate normality', 'Linear relationships', 'No multicollinearity'];
+                            interpretation = 'Models multiple outcomes using multiple predictors';
+                        }
+                    }
+                }
+
+                // Handle correlation/association tests
+                if (indepVars === 1 && depVars === 1 && groups === 0) {
+                    if (dependentVarType === 'interval_normal' && independentVarType === 'continuous') {
+                        recommendedTest = 'Pearson correlation / Simple linear regression';
+                        testCategory = 'correlation';
+                        assumptions = ['Linear relationship', 'Normal distribution', 'Homoscedasticity'];
+                        interpretation = 'Measures strength and direction of linear relationship';
+                        alternatives = ['Spearman correlation (non-parametric)'];
+                    } else if (dependentVarType === 'ordinal_interval') {
+                        recommendedTest = 'Spearman correlation';
+                        testCategory = 'non-parametric';
+                        assumptions = ['Monotonic relationship', 'Ordinal or interval data'];
+                        interpretation = 'Measures strength and direction of monotonic relationship';
+                    } else if (dependentVarType === 'categorical_2') {
+                        recommendedTest = 'Simple logistic regression';
+                        testCategory = 'regression';
+                        assumptions = ['Linear relationship with log-odds', 'Independence'];
+                        interpretation = 'Models probability of binary outcome';
+                    }
+                }
+
+                if (!recommendedTest) {
+                    recommendedTest = 'Custom analysis required';
+                    testCategory = 'complex';
+                    interpretation = 'This combination requires specialized statistical consultation';
+                    additionalNotes = 'Consider consulting with a statistician for complex designs';
+                }
+
+                setResults({
+                    recommendedTest,
+                    testCategory,
+                    assumptions,
+                    interpretation,
+                    alternatives,
+                    additionalNotes
+                });
+
+                setShowResults(true);
+            };
+
+            const resetForm = () => {
+                setNumDependentVars('');
+                setNumIndependentVars('');
+                setIndependentVarType('');
+                setDependentVarType('');
+                setNumGroups('');
+                setIsMatched(false);
+                setShowResults(false);
+            };
+
+            const getTestColor = (category) => {
+                switch (category) {
+                    case 'parametric': return 'text-blue-700 bg-blue-50 border-blue-200';
+                    case 'non-parametric': return 'text-green-700 bg-green-50 border-green-200';
+                    case 'categorical': return 'text-purple-700 bg-purple-50 border-purple-200';
+                    case 'regression': return 'text-orange-700 bg-orange-50 border-orange-200';
+                    case 'multivariate': return 'text-red-700 bg-red-50 border-red-200';
+                    case 'correlation': return 'text-cyan-700 bg-cyan-50 border-cyan-200';
+                    case 'exact': return 'text-indigo-700 bg-indigo-50 border-indigo-200';
+                    default: return 'text-gray-700 bg-gray-50 border-gray-200';
+                }
+            };
+
+            const isFormValid = numDependentVars !== '' && dependentVarType !== '' && 
+                             (numIndependentVars === '0' || (numIndependentVars !== '' && independentVarType !== ''));
+
+            return (
+                <div className="max-w-4xl mx-auto p-6 bg-white">
+                    <div className="mb-8 text-center">
+                        <div className="flex items-center justify-center gap-2 mb-4">
+                            <BarChartIcon />
+                            <h1 className="text-3xl font-bold text-gray-800">Statistical Test Selection Algorithm</h1>
+                        </div>
+                        <p className="text-gray-600 max-w-2xl mx-auto">
+                            Evidence-based decision support for selecting appropriate statistical tests based on your research design and data characteristics
+                        </p>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-8">
+                        {/* Input Section */}
+                        <div className="space-y-6">
+                            <div className="border border-gray-200 rounded-lg p-6">
+                                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                                    <CalculatorIcon />
+                                    Research Design
+                                </h2>
+                                
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Number of Dependent Variables
+                                        </label>
+                                        <select
+                                            value={numDependentVars}
+                                            onChange={(e) => setNumDependentVars(e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            <option value="">Select...</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2+</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Number of Independent Variables
+                                        </label>
+                                        <select
+                                            value={numIndependentVars}
+                                            onChange={(e) => setNumIndependentVars(e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            <option value="">Select...</option>
+                                            <option value="0">0 (one population)</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2 or more</option>
+                                        </select>
+                                    </div>
+
+                                    {numIndependentVars !== '0' && numIndependentVars !== '' && (
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Nature of Independent Variables
+                                            </label>
+                                            <select
+                                                value={independentVarType}
+                                                onChange={(e) => setIndependentVarType(e.target.value)}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                <option value="">Select...</option>
+                                                <option value="categorical">Categorical (groups)</option>
+                                                <option value="continuous">Continuous</option>
+                                                <option value="mixed">Mixed (categorical & continuous)</option>
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Nature of Dependent Variable(s)
+                                        </label>
+                                        <select
+                                            value={dependentVarType}
+                                            onChange={(e) => setDependentVarType(e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            <option value="">Select...</option>
+                                            <option value="interval_normal">Interval & Normal</option>
+                                            <option value="ordinal_interval">Ordinal or Interval</option>
+                                            <option value="categorical_2">Categorical (2 categories)</option>
+                                            <option value="categorical_multi">Categorical (multiple)</option>
+                                        </select>
+                                    </div>
+
+                                    {independentVarType === 'categorical' && (
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Number of Groups/Levels
+                                            </label>
+                                            <select
+                                                value={numGroups}
+                                                onChange={(e) => setNumGroups(e.target.value)}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                <option value="">Select...</option>
+                                                <option value="2">2</option>
+                                                <option value="3">3 or more</option>
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    {(independentVarType === 'categorical' && numGroups !== '') && (
+                                        <div className="space-y-3">
+                                            <label className="flex items-center space-x-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isMatched}
+                                                    onChange={(e) => setIsMatched(e.target.checked)}
+                                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                />
+                                                <span className="text-sm text-gray-700">Dependent/Matched Groups</span>
+                                            </label>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="mt-6 flex gap-3">
+                                    <button
+                                        onClick={getStatisticalTest}
+                                        disabled={!isFormValid}
+                                        className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                    >
+                                        Get Test Recommendation
+                                    </button>
+                                    <button
+                                        onClick={resetForm}
+                                        className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                                    >
+                                        Reset
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Data Type Reference */}
+                            <div className="border border-gray-200 rounded-lg p-6">
+                                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                                    <BookOpenIcon />
+                                    Data Type Guide
+                                </h3>
+                                <div className="space-y-2 text-sm">
+                                    <div>
+                                        <span className="font-medium text-blue-600">Interval & Normal:</span>
+                                        <span className="text-gray-600 ml-2">Continuous data with normal distribution</span>
+                                    </div>
+                                    <div>
+                                        <span className="font-medium text-green-600">Ordinal/Interval:</span>
+                                        <span className="text-gray-600 ml-2">Ranked data or non-normal continuous</span>
+                                    </div>
+                                    <div>
+                                        <span className="font-medium text-purple-600">Categorical:</span>
+                                        <span className="text-gray-600 ml-2">Discrete categories or counts</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Results Section */}
+                        <div className="space-y-6">
+                            {showResults ? (
+                                <div className="border border-gray-200 rounded-lg p-6">
+                                    <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                                        <ClipboardCheckIcon />
+                                        Test Recommendation
+                                    </h2>
+
+                                    <div className="space-y-4">
+                                        {/* Recommended Test */}
+                                        <div className={`p-4 rounded-lg border ${getTestColor(results.testCategory)}`}>
+                                            <h3 className="font-semibold mb-1">Recommended Test</h3>
+                                            <p className="text-lg font-medium">{results.recommendedTest}</p>
+                                            <p className="text-sm mt-1 opacity-80">Category: {results.testCategory}</p>
+                                        </div>
+
+                                        {/* Interpretation */}
+                                        <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                                            <h3 className="font-semibold text-blue-800 mb-1">Interpretation</h3>
+                                            <p className="text-blue-700 text-sm">{results.interpretation}</p>
+                                        </div>
+
+                                        {/* Assumptions */}
+                                        {results.assumptions.length > 0 && (
+                                            <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                                                <h3 className="font-semibold text-yellow-800 mb-2 flex items-center gap-1">
+                                                    <AlertCircleIcon />
+                                                    Key Assumptions
+                                                </h3>
+                                                <ul className="text-yellow-700 text-sm space-y-1">
+                                                    {results.assumptions.map((assumption, index) => (
+                                                        <li key={index} className="flex items-start gap-2">
+                                                            <span className="text-yellow-600 mt-1">•</span>
+                                                            <span>{assumption}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+
+                                        {/* Alternatives */}
+                                        {results.alternatives.length > 0 && (
+                                            <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
+                                                <h3 className="font-semibold text-gray-800 mb-1">Alternative Tests</h3>
+                                                <ul className="text-gray-700 text-sm space-y-1">
+                                                    {results.alternatives.map((alt, index) => (
+                                                        <li key={index} className="flex items-start gap-2">
+                                                            <span className="text-gray-500 mt-1">•</span>
+                                                            <span>{alt}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+
+                                        {/* Additional Notes */}
+                                        {results.additionalNotes && (
+                                            <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg">
+                                                <h3 className="font-semibold text-purple-800 mb-1">Additional Notes</h3>
+                                                <p className="text-purple-700 text-sm">{results.additionalNotes}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="border border-gray-200 rounded-lg p-6 text-center text-gray-500">
+                                    <BarChartLargeIcon />
+                                    <p className="mt-3">Select your research design parameters to get test recommendations</p>
+                                </div>
+                            )}
+
+                            {/* Statistical Principles */}
+                            <div className="border border-gray-200 rounded-lg p-6">
+                                <h3 className="font-semibold mb-3">Statistical Principles</h3>
+                                <div className="text-sm text-gray-600 space-y-2">
+                                    <p>• Choose tests based on data type and research design</p>
+                                    <p>• Verify assumptions before applying parametric tests</p>
+                                    <p>• Consider non-parametric alternatives for violated assumptions</p>
+                                    <p>• Adjust for multiple comparisons when appropriate</p>
+                                </div>
+                            </div>
+
+                            {/* Test Categories */}
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                                <h3 className="font-semibold mb-3 text-blue-800 flex items-center gap-2">
+                                    <AlertCircleIcon />
+                                    Test Categories
+                                </h3>
+                                <div className="text-sm text-blue-700 space-y-1">
+                                    <p><span className="font-medium">Parametric:</span> Assume normal distribution</p>
+                                    <p><span className="font-medium">Non-parametric:</span> Distribution-free tests</p>
+                                    <p><span className="font-medium">Categorical:</span> For frequency/count data</p>
+                                    <p><span className="font-medium">Regression:</span> Model relationships</p>
+                                    <p><span className="font-medium">Multivariate:</span> Multiple outcomes</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-8 text-center text-sm text-gray-500">
+                        <p>This tool provides statistical guidance. Always verify assumptions and consider consulting a statistician for complex analyses.</p>
+                    </div>
+                </div>
+            );
+        };
+
+        // Render the app
+        ReactDOM.render(<StatisticalTestAlgorithm />, document.getElementById('root'));
+    </script>
+</body>
+</html>
